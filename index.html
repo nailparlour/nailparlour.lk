@@ -1040,55 +1040,52 @@ function applyLogo() {
 applyLogo();
 
 // ─── DATA ─────────────────────────────────────────────────────────────
-function loadCategories() {
-  const stored = localStorage.getItem('nailparlour_categories');
-  if (stored) return JSON.parse(stored);
-  return [
-    { slug: 'floral', name: 'Floral' },
-    { slug: 'minimal', name: 'Minimal' },
-    { slug: 'glitter', name: 'Glitter' },
-    { slug: 'french', name: 'French' },
-    { slug: 'dark', name: 'Dark Tones' },
-    { slug: 'nude', name: 'Nude' },
-  ];
-}
 
-function saveCategories(cats) {
-  localStorage.setItem('nailparlour_categories', JSON.stringify(cats));
-}
 
-function loadProducts() {
-  const stored = localStorage.getItem('nailparlour_products');
-  if (stored) return JSON.parse(stored);
-  return [
-    { id:1, name:'Black Floral Fantasy', category:'floral', price:1000, emoji:'🌸', hot:true },
-    { id:2, name:'Blush Petal Garden', category:'floral', price:1000, emoji:'🌺', hot:false },
-    { id:3, name:'Chocolate Glaze', category:'nude', price:1000, emoji:'🍫', hot:true },
-    { id:4, name:'Rose Milk Ombré', category:'nude', price:1000, emoji:'🥛', hot:false },
-    { id:5, name:'Starlight Glitter', category:'glitter', price:1000, emoji:'✨', hot:true },
-    { id:6, name:'Pink Galaxy', category:'glitter', price:1000, emoji:'💫', hot:false },
-    { id:7, name:'Classic French Tip', category:'french', price:1000, emoji:'🤍', hot:false },
-    { id:8, name:'Gold French Luxe', category:'french', price:1000, emoji:'💛', hot:true },
-    { id:9, name:'Midnight Noir', category:'dark', price:1000, emoji:'🖤', hot:false },
-    { id:10, name:'Plum Velvet', category:'dark', price:1000, emoji:'🍇', hot:true },
-    { id:11, name:'Barely There Nude', category:'minimal', price:1000, emoji:'🪨', hot:false },
-    { id:12, name:'Clean Canvas', category:'minimal', price:1000, emoji:'🫧', hot:false },
-    { id:13, name:'Cherry Blossom', category:'floral', price:1000, emoji:'🌸', hot:false },
-    { id:14, name:'Silver Shimmer', category:'glitter', price:1000, emoji:'🥈', hot:true },
-    { id:15, name:'Terracotta Dream', category:'nude', price:1000, emoji:'🏺', hot:false },
-    { id:16, name:'Lavender Mist', category:'minimal', price:1000, emoji:'🪻', hot:false },
-    { id:17, name:'Deep Burgundy', category:'dark', price:1000, emoji:'🍷', hot:false },
-    { id:18, name:'Pastel Rainbow', category:'floral', price:1000, emoji:'🌈', hot:true },
-  ];
-}
+const API_URL = 'https://script.google.com/macros/s/AKfycbzjFWvBcjgpw93H76jSfdv3Ru-gpJX7VY8_1ZqZw2m0LRUvpyNRk8tiMkDaDKoym-le/exec';
 
-function saveProducts(prods) {
-  localStorage.setItem('nailparlour_products', JSON.stringify(prods));
-}
-
-let categories = loadCategories();
-let products = loadProducts();
+let categories = [];
+let products = [];
 let activeFilter = 'all';
+
+async function fetchData() {
+  try {
+    const res = await fetch(API_URL);
+    const data = await res.json();
+
+    categories = data.categories || [];
+    products = data.products || [];
+
+    renderFilterBar();
+    renderProducts();
+    renderAdminCategories();
+    renderAdminProducts();
+    renderCatSelectOptions();
+
+  } catch (err) {
+    console.error(err);
+    showToast('⚠️ Failed to load data');
+  }
+}
+
+async function syncToServer() {
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        categories,
+        products
+      })
+    });
+
+  } catch (err) {
+    console.error(err);
+    showToast('⚠️ Failed to sync changes');
+  }
+}
+
+
+
 
 // ─── FILTER BAR ───────────────────────────────────────────────────────
 function renderFilterBar() {
@@ -1287,7 +1284,7 @@ function saveCategory() {
     showToast('✅ Category added!');
   }
 
-  saveCategories(categories);
+syncToServer();
   resetCatForm();
   renderAdminCategories();
   renderFilterBar();
@@ -1299,8 +1296,7 @@ function deleteCategory(slug) {
   if (!confirm(`Delete category "${slug}"? Products in this category will be removed too.`)) return;
   categories = categories.filter(c => c.slug !== slug);
   products = products.filter(p => p.category !== slug);
-  saveCategories(categories);
-  saveProducts(products);
+syncToServer();
   renderAdminCategories();
   renderFilterBar();
   renderProducts();
@@ -1421,7 +1417,7 @@ function saveProduct() {
     showToast('✅ Product added!');
   }
 
-  saveProducts(products);
+syncToServer();
   resetProdForm();
   renderAdminProducts();
   renderProducts();
@@ -1430,7 +1426,7 @@ function saveProduct() {
 function deleteProduct(id) {
   if (!confirm('Delete this product?')) return;
   products = products.filter(p => p.id !== id);
-  saveProducts(products);
+syncToServer();
   renderAdminProducts();
   renderProducts();
   showToast('🗑 Product deleted.');
@@ -1464,8 +1460,7 @@ document.querySelectorAll('.step, .feature-item').forEach(el => {
 });
 
 // ─── INIT ────────────────────────────────────────────────────────────────
-renderFilterBar();
-renderProducts();
+fetchData();
 </script>
 </body>
 </html>
