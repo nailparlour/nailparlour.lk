@@ -918,6 +918,11 @@
   <div class="pw-modal">
     <div class="pw-lock-icon">🔐</div>
     <div class="pw-title">Admin Access</div>
+    <input
+  type="email"
+  id="adminEmail"
+  placeholder="Admin Email"
+>
     <div class="pw-subtitle">Enter your password to manage<br>products and categories.</div>
     <div class="pw-input-wrap">
       <input class="pw-input" id="pwInput" type="password" placeholder="••••••••"
@@ -925,7 +930,7 @@
       <button class="pw-eye" id="pwEye" onclick="togglePwVis()" tabindex="-1">👁</button>
     </div>
     <div class="pw-error" id="pwError"></div>
-    <button class="pw-btn" onclick="checkPassword()">Unlock ✨</button>
+    <button class="pw-btn" onclick="loginAdmin()">Unlock ✨</button>
     <button class="pw-cancel" onclick="closePwModal()">Cancel</button>
   </div>
 </div>
@@ -1149,7 +1154,32 @@ function filterProducts(category, btn) {
 }
 
 // ─── PASSWORD GATE ───────────────────────────────────────────────────
-const ADMIN_PASSWORD = 'nailparlour.ca';
+<script>
+async function loginAdmin() {
+
+  const email =
+    document.getElementById("adminEmail").value;
+
+  const password =
+    document.getElementById("adminPassword").value;
+
+  try {
+
+    await window.firebaseLogin(
+      window.firebaseAuth,
+      email,
+      password
+    );
+
+    openAdminPanel();
+
+  } catch (err) {
+
+    alert("Wrong login");
+
+  }
+}
+</script>
 let adminUnlocked = false;
 
 function openAdmin() {
@@ -1165,23 +1195,7 @@ function openAdmin() {
   }
 }
 
-function checkPassword() {
-  const val = document.getElementById('pwInput').value;
-  if (val === ADMIN_PASSWORD) {
-    adminUnlocked = true;
-    closePwModal();
-    _openAdminPanel();
-  } else {
-    const inp = document.getElementById('pwInput');
-    const err = document.getElementById('pwError');
-    err.textContent = 'Incorrect password. Please try again.';
-    inp.classList.remove('shake');
-    void inp.offsetWidth; // reflow to restart animation
-    inp.classList.add('shake');
-    inp.value = '';
-    setTimeout(() => inp.classList.remove('shake'), 500);
-  }
-}
+
 
 function closePwModal() {
   document.getElementById('pwOverlay').classList.remove('open');
@@ -1461,6 +1475,35 @@ document.querySelectorAll('.step, .feature-item').forEach(el => {
 
 // ─── INIT ────────────────────────────────────────────────────────────────
 fetchData();
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+  import {
+    getAuth,
+    signInWithEmailAndPassword,
+    onAuthStateChanged,
+    signOut
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+  
+  const firebaseConfig = {
+  apiKey: "AIzaSyCrl9fmhsAUXtwTl8HtIOAhXjFCCEkCZQY",
+  authDomain: "nailparlour-store.firebaseapp.com",
+  projectId: "nailparlour-store",
+  storageBucket: "nailparlour-store.firebasestorage.app",
+  messagingSenderId: "353460810459",
+  appId: "1:353460810459:web:2837a2c6e3ee66ccbad2fe"
+};
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  window.firebaseAuth = auth;
+  window.firebaseLogin = signInWithEmailAndPassword;
+  window.firebaseWatch = onAuthStateChanged;
+  window.firebaseLogout = signOut;
 </script>
 </body>
 </html>
